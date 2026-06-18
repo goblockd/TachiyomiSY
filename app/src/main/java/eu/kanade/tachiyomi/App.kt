@@ -24,6 +24,8 @@ import coil3.network.okhttp.OkHttpNetworkFetcherFactory
 import coil3.request.allowRgb565
 import coil3.request.crossfade
 import coil3.util.DebugLogger
+import com.github.awxkee.avifcoil.decoder.HeifDecoder
+import com.github.awxkee.avifcoil.decoder.animation.AnimatedAvifDecoder
 import com.elvishew.xlog.LogConfiguration
 import com.elvishew.xlog.LogLevel
 import com.elvishew.xlog.XLog
@@ -232,6 +234,10 @@ class App : Application(), DefaultLifecycleObserver, SingletonImageLoader.Factor
                 // NetworkFetcher.Factory
                 add(OkHttpNetworkFetcherFactory(callFactoryLazy::value))
                 // Decoder.Factory
+                if (Build.VERSION.SDK_INT >= 24) {
+                    add(AnimatedAvifDecoder.Factory())
+                    add(HeifDecoder.Factory())
+                }
                 add(TachiyomiImageDecoder.Factory())
                 // Fetcher.Factory
                 add(BufferedSourceFetcher.Factory())

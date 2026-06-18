@@ -86,6 +86,8 @@ object ImageUtil {
                 Format.Webp -> type.isAnimated && Build.VERSION.SDK_INT >= Build.VERSION_CODES.P
                 // Animated Heif on Android 11+
                 Format.Heif -> type.isAnimated && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
+                // Animated AVIF (avis brand) via avif-coder-coil
+                Format.Avif -> type.isAnimated && Build.VERSION.SDK_INT >= 24
                 else -> false
             }
         } catch (e: Exception) {
