@@ -41,6 +41,7 @@ import eu.kanade.domain.ui.model.setAppCompatDelegateThemeMode
 import eu.kanade.tachiyomi.core.security.PrivacyPreferences
 import eu.kanade.tachiyomi.crash.CrashActivity
 import eu.kanade.tachiyomi.crash.GlobalExceptionHandler
+import eu.kanade.tachiyomi.data.coil.AnimatedAvifFactory
 import eu.kanade.tachiyomi.data.coil.BufferedSourceFetcher
 import eu.kanade.tachiyomi.data.coil.MangaCoverFetcher
 import eu.kanade.tachiyomi.data.coil.MangaCoverKeyer
@@ -238,6 +239,7 @@ class App : Application(), DefaultLifecycleObserver, SingletonImageLoader.Factor
                     add(SystemAvifDecoder.Factory())
                 }
                 if (Build.VERSION.SDK_INT >= 24) {
+                    add(AnimatedAvifFactory())
                     add(HeifDecoder.Factory())
                 }
                 add(TachiyomiImageDecoder.Factory())
