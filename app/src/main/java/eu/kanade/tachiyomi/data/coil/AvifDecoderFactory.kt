@@ -17,7 +17,7 @@ class SystemAvifDecoder(
 ) : Decoder {
 
     override suspend fun decode(): DecodeResult? = runInterruptible {
-        val sourceData = source.source.source().readByteArray()
+        val sourceData = source.source.source().peek().readByteArray()
 
         try {
             val src = ImageDecoder.createSource(ByteBuffer.wrap(sourceData))
