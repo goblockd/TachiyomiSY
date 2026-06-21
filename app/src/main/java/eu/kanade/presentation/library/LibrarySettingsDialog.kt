@@ -105,7 +105,7 @@ private fun ColumnScope.FilterPage(
     screenModel: LibrarySettingsScreenModel,
 ) {
     val isPerCategory = category != null && screenModel.libraryPreferences.categorizedFilterSettings.collectAsState().value
-    val catFlags = if (isPerCategory) category!!.flags else 0L
+    val catFlags = if (isPerCategory) category.flags else 0L
 
     val filterMode = if (isPerCategory) {
         LibraryFilterFlags.getMode(catFlags)
