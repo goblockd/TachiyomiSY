@@ -24,7 +24,6 @@ import exh.source.anyIs
 import kotlinx.collections.immutable.persistentListOf
 import tachiyomi.domain.library.model.LibraryDisplayMode
 import tachiyomi.i18n.MR
-import tachiyomi.i18n.sy.SYMR
 import tachiyomi.presentation.core.i18n.stringResource
 import tachiyomi.source.local.LocalSource
 
@@ -40,9 +39,6 @@ fun BrowseSourceToolbar(
     onHelpClick: () -> Unit,
     onSettingsClick: () -> Unit,
     onSearch: (String) -> Unit,
-    // SY -->
-    onAddShortcut: (() -> Unit)? = null,
-    // SY <--
     scrollBehavior: TopAppBarScrollBehavior? = null,
 ) {
     // Avoid capturing unstable source in actions lambda
@@ -117,15 +113,6 @@ fun BrowseSourceToolbar(
                                 AppBar.OverflowAction(
                                     title = stringResource(MR.strings.action_settings),
                                     onClick = onSettingsClick,
-                                ),
-                            )
-                        }
-                        // SY -->
-                        if (onAddShortcut != null) {
-                            add(
-                                AppBar.OverflowAction(
-                                    title = stringResource(SYMR.strings.add_shortcut),
-                                    onClick = onAddShortcut,
                                 ),
                             )
                         }
