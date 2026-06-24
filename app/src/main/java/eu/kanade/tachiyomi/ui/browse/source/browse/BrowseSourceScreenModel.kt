@@ -109,6 +109,7 @@ open class BrowseSourceScreenModel(
     private val deleteSavedSearchById: DeleteSavedSearchById = Injekt.get(),
     private val insertSavedSearch: InsertSavedSearch = Injekt.get(),
     private val getExhSavedSearch: GetExhSavedSearch = Injekt.get(),
+    private val genreSearchQuery: String? = null,
     // SY <--
 ) : StateScreenModel<BrowseSourceScreenModel.State>(State(Listing.valueOf(listingQuery))) {
 
@@ -173,6 +174,60 @@ open class BrowseSourceScreenModel(
                     mutableState.update { it.copy(savedSearches = savedSearches.toImmutableList()) }
                 }
                 .launchIn(screenModelScope)
+        }
+
+        val genreQuery = genreSearchQuery
+        if (genreQuery != null && source is CatalogueSource) {
+            val filters = source.getFilterList()
+            var genreExists = false
+
+            filterLoop@ for (sourceFilter in filters) {
+                when {
+                    sourceFilter is SourceModelFilter.Group<*> -> {
+                        for (filter in sourceFilter.state) {
+                            if (filter is SourceModelFilter<*> && filter.name.equals(genreQuery, true)) {
+                                when (filter) {
+                                    is SourceModelFilter.TriState -> filter.state = 1
+                                    is SourceModelFilter.CheckBox -> filter.state = true
+                                    else -> {}
+                                }
+                                genreExists = true
+                                break@filterLoop
+                            }
+                        }
+                    }
+                    sourceFilter is SourceModelFilter.Select<*> -> {
+                        val index = sourceFilter.values.filterIsInstance<String>()
+                            .indexOfFirst { it.equals(genreQuery, true) }
+                        if (index != -1) {
+                            sourceFilter.state = index
+                            genreExists = true
+                            break@filterLoop
+                        }
+                    }
+                    sourceFilter is SourceModelFilter.AutoComplete -> {
+                        if (genreQuery.contains(':')) {
+                            @Suppress("UNCHECKED_CAST")
+                            sourceFilter.state = listOf(genreQuery.trimEnd('$'))
+                            genreExists = true
+                            break@filterLoop
+                        }
+                    }
+                }
+            }
+
+            mutableState.update {
+                val listing = if (genreExists) {
+                    Listing.Search(query = null, filters = filters)
+                } else {
+                    Listing.Search(query = genreQuery, filters = filters)
+                }
+                it.copy(
+                    filters = filters,
+                    listing = listing,
+                    toolbarQuery = listing.query,
+                )
+            }
         }
         // SY <--
     }
@@ -429,6 +484,7 @@ open class BrowseSourceScreenModel(
         data class Search(
             override val query: String?,
             override val filters: FilterList,
+            val savedSearchId: Long? = null,
         ) : Listing(query = query, filters = filters)
 
         companion object {
@@ -453,6 +509,8 @@ open class BrowseSourceScreenModel(
         data class Migrate(val target: Manga, val current: Manga) : Dialog
 
         // SY -->
+        data class SavedSearchActions(val search: EXHSavedSearch) : Dialog
+        data class UpdateSavedSearch(val search: EXHSavedSearch) : Dialog
         data class DeleteSavedSearch(val idToDelete: Long, val name: String) : Dialog
         data class CreateSavedSearch(val currentSavedSearches: ImmutableList<String>) : Dialog
         // SY <--
@@ -506,6 +564,7 @@ open class BrowseSourceScreenModel(
                     listing = Listing.Search(
                         query = search.query,
                         filters = filters,
+                        savedSearchId = search.id,
                     ),
                     filters = filters,
                     toolbarQuery = search.query,
@@ -515,7 +574,37 @@ open class BrowseSourceScreenModel(
     }
 
     fun onSavedSearchPress(search: EXHSavedSearch) {
+        mutableState.update { it.copy(dialog = Dialog.SavedSearchActions(search)) }
+    }
+
+    fun showDeleteSavedSearch(search: EXHSavedSearch) {
         mutableState.update { it.copy(dialog = Dialog.DeleteSavedSearch(search.id, search.name)) }
+    }
+
+    fun showUpdateSavedSearch(search: EXHSavedSearch) {
+        mutableState.update { it.copy(dialog = Dialog.UpdateSavedSearch(search)) }
+    }
+
+    fun updateSavedSearch(search: EXHSavedSearch) {
+        if (source !is CatalogueSource) return
+        screenModelScope.launchNonCancellable {
+            val query = state.value.toolbarQuery?.takeUnless {
+                it.isBlank() || it == GetRemoteManga.QUERY_POPULAR || it == GetRemoteManga.QUERY_LATEST
+            }?.trim()
+            val filterList = state.value.filters.ifEmpty { source.getFilterList() }
+            deleteSavedSearchById.await(search.id)
+            insertSavedSearch.await(
+                SavedSearch(
+                    id = -1,
+                    source = source.id,
+                    name = search.name.trim(),
+                    query = query,
+                    filtersJson = runCatching {
+                        filterSerializer.serialize(filterList).ifEmpty { null }?.let { Json.encodeToString(it) }
+                    }.getOrNull(),
+                ),
+            )
+        }
     }
 
     fun saveSearch(

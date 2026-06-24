@@ -17,12 +17,12 @@ plugins {
     id("com.github.ben-manes.versions")
 }
 
-if (gradle.startParameter.taskRequests.toString().contains("Standard")) {
-    pluginManager.apply {
-        apply(libs.plugins.google.services.get().pluginId)
-        apply(libs.plugins.firebase.crashlytics.get().pluginId)
-    }
-}
+// if (gradle.startParameter.taskRequests.toString().contains("Standard")) {
+//     pluginManager.apply {
+//         apply(libs.plugins.google.services.get().pluginId)
+//         apply(libs.plugins.firebase.crashlytics.get().pluginId)
+//     }
+// }
 
 android {
     namespace = "eu.kanade.tachiyomi"
@@ -251,6 +251,7 @@ dependencies {
 
     // Image loading
     implementation(libs.bundles.coil)
+    implementation(libs.avif.coder.coil)
     implementation(libs.subsamplingScaleImageView) {
         exclude(module = "image-decoder")
     }
@@ -299,10 +300,10 @@ dependencies {
     testImplementation(libs.kotlinx.coroutines.test)
 
     // SY -->
-    // Firebase (EH)
-    implementation(platform(libs.firebase.bom))
-    implementation(libs.firebase.analytics)
-    implementation(libs.firebase.crashlytics)
+    // Firebase (EH) — removed: no Google API required
+    // implementation(platform(libs.firebase.bom))
+    // implementation(libs.firebase.analytics)
+    // implementation(libs.firebase.crashlytics)
 
     // Better logging (EH)
     implementation(sylibs.xlog)
@@ -338,8 +339,12 @@ androidComponents {
     }
 
     onVariants(selector().withFlavor("default" to "standard")) {
-        // Only excluding in standard flavor because this breaks
+        // Only excluding in release-like flavors because this breaks
         // Layout Inspector's Compose tree
+        it.packaging.resources.excludes.add("META-INF/*.version")
+    }
+
+    onVariants(selector().withFlavor("default" to "fdroid")) {
         it.packaging.resources.excludes.add("META-INF/*.version")
     }
 }
